@@ -63,6 +63,8 @@ function seedStore() {
       googleReviewUrl: '',
       reviewsEnabled: true,
       reviewsAutoApprove: false,
+      remindersEnabled: true,
+      reminderHours: 24,
       notify: {
         emailEnabled: true,
         whatsappEnabled: true,
@@ -328,6 +330,117 @@ async function notifyBooking(b, req) {
   await Promise.allSettled([notifyEmail(b, adminUrl), notifyWhatsApp(b, adminUrl)]);
 }
 
+/* ---------- recordatorios a clientas ---------- */
+function tzOffsetMinutes(date, timeZone) {
+  const dtf = new Intl.DateTimeFormat('en-US', {
+    timeZone, hour12: false,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+  });
+  const p = {};
+  for (const part of dtf.formatToParts(date)) if (part.type !== 'literal') p[part.type] = part.value;
+  const asUTC = Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second);
+  return (asUTC - date.getTime()) / 60000;
+}
+function epochInTz(dateStr, timeStr, tz = 'Europe/Madrid') {
+  const [y, m, d] = String(dateStr).split('-').map(Number);
+  const [hh, mm] = String(timeStr).split(':').map(Number);
+  const guess = Date.UTC(y, m - 1, d, hh, mm);
+  return guess - tzOffsetMinutes(new Date(guess), tz) * 60000;
+}
+function reminderWhen(b) {
+  const [y, m, d] = String(b.date).split('-').map(Number);
+  const now = madridNow().date.split('-').map(Number);
+  const diff = Math.round((Date.UTC(y, m - 1, d) - Date.UTC(now[0], now[1] - 1, now[2])) / 86400000);
+  if (diff === 0) return 'hoy';
+  if (diff === 1) return 'mañana';
+  return `el ${d}/${m}`;
+}
+
+async function sendClientReminder(b, hours) {
+  const c = getNotifyConfig();
+  if (!b.email) return { ok: false, error: 'la clienta no dejó email' };
+  if (!c.emailKey) return { ok: false, error: 'email sin configurar' };
+  const when = reminderWhen(b);
+  const fecha = bookingDateLabel(b.date);
+  const waDigits = String(store.settings.whatsapp || '').replace(/[^\d]/g, '');
+  const lines = [
+    `Hola ${b.name}:`,
+    '',
+    `Te recordamos que ${when} tienes cita con nosotras en Beauty By Gera.`,
+    '',
+    `Fecha: ${fecha}`,
+    `Hora: ${b.time} h`,
+    `Servicio: ${b.serviceName}`,
+  ];
+  if (store.settings.address) lines.push(`Dirección: ${store.settings.address}`);
+  if (waDigits) lines.push(`Si necesitas cambiarla, escríbenos: https://wa.me/${waDigits}`);
+  lines.push('', '¡Nos vemos pronto! ✦');
+  const text = lines.join('\n');
+  const html = `<div style="font-family:system-ui,sans-serif;line-height:1.65;color:#241318">
+    <p>Hola <b>${escHtml(b.name)}</b>:</p>
+    <p>Te recordamos que <b>${escHtml(when)}</b> tienes cita con nosotras en Beauty By Gera.</p>
+    <p style="background:#fff4f7;border-radius:12px;padding:12px 14px;margin:14px 0">
+      <b>${escHtml(fecha)}</b> a las <b>${escHtml(b.time)} h</b><br>
+      ${escHtml(b.serviceName)}${store.settings.address ? `<br>${escHtml(store.settings.address)}` : ''}
+    </p>
+    ${waDigits ? `<p>Si necesitas cambiarla, <a href="https://wa.me/${waDigits}" style="color:#d8748e">escríbenos por WhatsApp</a>.</p>` : ''}
+    <p>¡Nos vemos pronto! ✦</p>
+  </div>`;
+  try {
+    const authHeader = 'Bearer ' + c.emailKey;
+    const r = await fetch(NOTIFY.resendBase + '/emails', {
+      method: 'POST',
+      headers: { Authorization: authHeader, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: c.emailFrom,
+        to: [b.email],
+        subject: `Recordatorio: tu cita ${when} a las ${b.time} h · Beauty By Gera`,
+        text,
+        html,
+      }),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!r.ok) { console.warn('[reminder] email respondió', r.status); return { ok: false, error: 'HTTP ' + r.status }; }
+    return { ok: true };
+  } catch (err) {
+    console.warn('[reminder] email falló:', err.message, err.cause?.message || '');
+    return { ok: false, error: err.message };
+  }
+}
+
+async function processReminders({ forceBookingId = null } = {}) {
+  const hours = Number(store.settings.reminderHours) === 12 ? 12 : 24;
+  if (!store.settings.remindersEnabled && !forceBookingId) return { sent: 0, hours, disabled: true };
+  if (!getNotifyConfig().emailKey && !forceBookingId) return { sent: 0, hours, noEmail: true };
+  const now = Date.now();
+  let sent = 0;
+  const errors = [];
+  for (const b of store.bookings) {
+    if (b.status === 'cancelled' || !b.email) continue;
+    if (forceBookingId && b.id !== forceBookingId) continue;
+    const appt = epochInTz(b.date, b.time);
+    if (!Number.isFinite(appt)) continue;
+    if (!forceBookingId) {
+      if (appt <= now) continue;
+      const due = appt - hours * 3600 * 1000;
+      if (now < due) continue;
+      if (now - due > 6 * 3600 * 1000) continue;
+      if (b.reminders && b.reminders[hours]) continue;
+    }
+    const r = await sendClientReminder(b, hours);
+    if (r.ok) {
+      b.reminders = { ...(b.reminders || {}), [hours]: new Date().toISOString() };
+      sent++;
+      await persist();
+    } else {
+      errors.push({ id: b.id, error: r.error });
+    }
+    if (forceBookingId) break;
+  }
+  return { sent, hours, errors };
+}
+
 /* ---------- http ---------- */
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -419,6 +532,14 @@ async function handleApi(req, res, url) {
   const p = url.pathname;
 
   if (p === '/api/site' && req.method === 'GET') return json(res, 200, publicSite());
+
+  if (p === '/api/cron/reminders' && (req.method === 'GET' || req.method === 'POST')) {
+    const secret = process.env.CRON_SECRET || '';
+    const provided = url.searchParams.get('key') || req.headers['x-cron-key'] || '';
+    if (!secret || provided !== secret) return json(res, 403, { error: 'No autorizado' });
+    const result = await processReminders();
+    return json(res, 200, { ok: true, ...result });
+  }
 
   if (p === '/api/availability' && req.method === 'GET') {
     const ym = url.searchParams.get('month') || madridNow().date.slice(0, 7);
@@ -566,6 +687,8 @@ async function handleApi(req, res, url) {
     if (Number.isFinite(Number(body.mapZoom))) store.settings.mapZoom = Math.min(19, Math.max(3, Math.round(Number(body.mapZoom))));
     if (typeof body.reviewsEnabled === 'boolean') store.settings.reviewsEnabled = body.reviewsEnabled;
     if (typeof body.reviewsAutoApprove === 'boolean') store.settings.reviewsAutoApprove = body.reviewsAutoApprove;
+    if (typeof body.remindersEnabled === 'boolean') store.settings.remindersEnabled = body.remindersEnabled;
+    if ([12, 24].includes(Number(body.reminderHours))) store.settings.reminderHours = Number(body.reminderHours);
     if (body.notify && typeof body.notify === 'object') {
       const n = store.settings.notify;
       for (const k of ['emailTo', 'emailFrom', 'waPhone']) {
@@ -603,6 +726,14 @@ async function handleApi(req, res, url) {
     const result = channel === 'whatsapp' ? await notifyWhatsApp(sample, adminUrl) : await notifyEmail(sample, adminUrl);
     if (!result.ok) return json(res, 400, { ok: false, error: result.error || 'No se pudo enviar' });
     return json(res, 200, { ok: true });
+  }
+
+  if (p === '/api/admin/reminders/run' && req.method === 'POST') {
+    if (!requireAuth(req, res)) return;
+    let body;
+    try { body = JSON.parse(await readBody(req, 16 * 1024)); } catch { body = {}; }
+    const result = await processReminders({ forceBookingId: body.bookingId ? String(body.bookingId) : null });
+    return json(res, 200, { ok: true, ...result });
   }
 
   if (p === '/api/admin/services' && req.method === 'PUT') {
@@ -881,4 +1012,9 @@ server.listen({ port: PORT, host: '::', ipv6Only: false }, () => {
   console.log('');
   if (PREVIEW_MODE) console.log('  Modo demo público: el panel solo acepta acceso local.\n');
 });
+
+setInterval(() => {
+  processReminders().catch((err) => console.warn('[reminders]', err.message));
+}, 10 * 60 * 1000).unref();
+processReminders().catch(() => {});
 

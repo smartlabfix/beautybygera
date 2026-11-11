@@ -178,6 +178,10 @@ function renderBookings() {
     const [y, m, d] = b.date.split('-').map(Number);
     const wa = String(b.phone || '').replace(/[^\d]/g, '');
     const statusLabel = b.status === 'confirmed' ? 'Confirmada' : b.status === 'cancelled' ? 'Cancelada' : 'Pendiente';
+    const remHours = Number(state.data.settings.reminderHours) === 12 ? 12 : 24;
+    const reminded = b.reminders && b.reminders[remHours];
+    const remindText = `Hola ${b.name}, te recuerdo tu cita en Beauty By Gera el ${d}/${m} a las ${b.time} h (${b.serviceName}). Si necesitas cambiarla, avísame. ✦`;
+    const remindHref = wa ? `https://wa.me/${wa}?text=${encodeURIComponent(remindText)}` : '';
     return `<div class="booking-row">
       <div class="bdate"><div class="d">${d}</div><div class="m">${MONTHS[m - 1]}</div></div>
       <div class="bmain">
@@ -187,10 +191,12 @@ function renderBookings() {
           <span>${esc(b.time)} h</span>
           <a href="tel:${esc(b.phone)}">${esc(b.phone)}</a>
           ${wa ? `<a href="https://wa.me/${wa}" target="_blank" rel="noopener">WhatsApp ↗</a>` : ''}
+          ${reminded ? '<span style="color:#276b41">Recordatorio enviado</span>' : ''}
         </div>
         ${b.notes ? `<div class="notes">“${esc(b.notes)}”</div>` : ''}
       </div>
       <div class="bactions">
+        ${remindHref ? `<a class="mini-btn" href="${remindHref}" target="_blank" rel="noopener" title="Recordar por WhatsApp">⏰</a>` : ''}
         ${b.status !== 'confirmed' ? `<button class="mini-btn" data-act="confirm" data-id="${b.id}" title="Confirmar">✓</button>` : ''}
         ${b.status !== 'cancelled' ? `<button class="mini-btn" data-act="cancel" data-id="${b.id}" title="Cancelar">⊘</button>` : ''}
         <button class="mini-btn danger" data-act="delete" data-id="${b.id}" title="Eliminar">🗑</button>
@@ -643,6 +649,8 @@ function fillSettings() {
     $('#notifyWaKey').placeholder = n.hasWaKey ? '•••••• (guardada)' : 'Pega aquí tu API key';
     $('#notifyStatus').textContent = (n.email || n.whatsapp) ? 'Canal(es) activos' : 'Ningún canal configurado todavía';
   }
+  $('#remindersOn').checked = s.remindersEnabled !== false;
+  $('#reminderHours').value = String(Number(s.reminderHours) === 12 ? 12 : 24);
 }
 
 $('#saveSettings').addEventListener('click', async () => {
@@ -844,6 +852,20 @@ async function testNotify(channel, btn) {
 }
 $('#testEmail').addEventListener('click', (e) => testNotify('email', e.currentTarget));
 $('#testWa').addEventListener('click', (e) => testNotify('whatsapp', e.currentTarget));
+
+$('#saveReminders').addEventListener('click', async () => {
+  try {
+    await api('/api/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify({
+        remindersEnabled: $('#remindersOn').checked,
+        reminderHours: Number($('#reminderHours').value),
+      }),
+    });
+    toast('Recordatorios guardados ✦');
+    await loadAll();
+  } catch (ex) { toast(ex.message); }
+});
 
 /* ---------- boot ---------- */
 (async () => {

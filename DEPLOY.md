@@ -88,6 +88,7 @@ El servidor crea `data/store.json` al arrancar. Si existe `data/seed.json`, lo u
 | `NOTIFY_FROM` | Remitente verificado (por defecto `onboarding@resend.dev`). |
 | `CALLMEBOT_PHONE` | Tu WhatsApp con prefijo (ej. `+34600111222`). |
 | `CALLMEBOT_APIKEY` | Clave que te da CallMeBot. |
+| `CRON_SECRET` | Clave para el endpoint de recordatorios automáticos. |
 
 ## Avisos de nuevas citas
 
@@ -122,6 +123,23 @@ CallMeBot es un servicio gratuito no oficial: puede tardar o limitar envíos. Pa
 
 ### Comprobar
 En el panel → **Ajustes → Avisos de nuevas citas** verás si cada canal está **Activado**. Haz una reserva de prueba y revisa el email/WhatsApp; luego bórrala en Agenda.
+
+## Recordatorios a clientas
+
+En **Ajustes → Recordatorios a clientas** puedes activarlos y elegir **24 h** o **12 h** antes.
+
+- **Email automático**: se envía a la dirección que dejó la clienta. Necesita Resend con un **dominio verificado**; con `onboarding@resend.dev` solo puedes escribirte a ti, no a las clientas.
+- **WhatsApp**: CallMeBot no puede escribir a números que no hayan autorizado el bot, así que en Agenda tienes un botón **⏰** que abre WhatsApp con el recordatorio ya escrito para enviarlo con un toque. Para envío automático real hace falta la API oficial de Meta (cuenta Business, número verificado y plantilla aprobada).
+
+### Que los recordatorios se ejecuten siempre
+Render Free **duerme** el servicio tras 15 minutos sin visitas, y entonces el proceso interno no corre. Solución gratuita:
+
+1. Define `CRON_SECRET` en Render → Environment.
+2. Crea una tarea gratuita en <https://cron-job.org> cada 10 minutos contra:
+   `https://TU-URL.onrender.com/api/cron/reminders?key=TU_CRON_SECRET`
+3. Cada llamada despierta el servicio y envía los recordatorios que toquen.
+
+El endpoint responde 403 si la clave no coincide y `{sent:n}` si todo va bien.
 
 ## Antes de enseñarla
 

@@ -292,6 +292,26 @@
       </div>
 
       <div class="panel-block">
+        <div class="block-head">
+          <div>
+            <h3>Recordatorios a clientas</h3>
+            <p class="hint">Email automático antes de la cita. El WhatsApp se envía con un toque desde Agenda.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="saveReminders" type="button">Guardar recordatorios</button>
+        </div>
+        <div class="special-row">
+          <label class="switch"><input type="checkbox" id="remindersOn"> <span>Recordatorios activos</span></label>
+          <label class="field-inline">Avisar
+            <select id="reminderHours">
+              <option value="24">24 h antes</option>
+              <option value="12">12 h antes</option>
+            </select>
+          </label>
+        </div>
+        <p class="hint" style="margin-top:.6rem">El email va a la dirección que dejó la clienta y requiere Resend con dominio verificado. El botón ⏰ de Agenda abre WhatsApp con el mensaje listo.</p>
+      </div>
+
+      <div class="panel-block">
         <div class="block-head"><div><h3>Seguridad</h3><p class="hint">Cambia la contraseña del panel. Se cerrarán todas las sesiones.</p></div></div>
         <div class="form-grid">
           <div class="field"><label>Contraseña actual</label><input type="password" id="pwCurrent" autocomplete="current-password"></div>

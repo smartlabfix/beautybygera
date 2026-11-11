@@ -191,6 +191,8 @@
 .switch input::after{content:''; position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.2); transition:transform .2s}
 .switch input:checked{background:var(--rose-deep)}
 .switch input:checked::after{transform:translateX(18px)}
+.field-inline{display:inline-flex; align-items:center; gap:.45rem; font-size:.8rem; color:var(--ink-soft)}
+.field-inline select{padding:.4rem .5rem; border-radius:9px; border:1px solid rgba(125,47,69,.16); font-family:inherit; font-size:.78rem; background:#fff; color:var(--ink)}
 
 /* review rows */
 .review-row{display:grid; grid-template-columns:1fr auto; gap:.8rem; border:1px solid rgba(125,47,69,.1); border-radius:18px; padding:1rem 1.1rem; background:#fffdfc}
