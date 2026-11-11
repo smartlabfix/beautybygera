@@ -631,10 +631,18 @@ function fillSettings() {
     ? `<img src="${esc(s.logo)}" alt="Logo actual">`
     : '<span class="hint">Sin logo: se usa la marca tipográfica “Beauty By Gera”.</span>';
   const n = state.data.notify || {};
-  const eEl = $('#notifyEmail');
-  const wEl = $('#notifyWhatsapp');
-  if (eEl) { eEl.textContent = n.email ? 'Activado' : 'Sin configurar'; eEl.className = n.email ? 'ok' : 'off'; }
-  if (wEl) { wEl.textContent = n.whatsapp ? 'Activado' : 'Sin configurar'; wEl.className = n.whatsapp ? 'ok' : 'off'; }
+  if ($('#notifyEmailOn')) {
+    $('#notifyEmailOn').checked = n.emailEnabled !== false;
+    $('#notifyWaOn').checked = n.whatsappEnabled !== false;
+    $('#notifyEmailTo').value = n.emailTo || '';
+    $('#notifyEmailFrom').value = n.emailFrom || '';
+    $('#notifyWaPhone').value = n.waPhone || '';
+    $('#notifyResendKey').value = '';
+    $('#notifyWaKey').value = '';
+    $('#notifyResendKey').placeholder = n.hasResendKey ? '•••••• (guardada)' : 'Pega aquí tu API key';
+    $('#notifyWaKey').placeholder = n.hasWaKey ? '•••••• (guardada)' : 'Pega aquí tu API key';
+    $('#notifyStatus').textContent = (n.email || n.whatsapp) ? 'Canal(es) activos' : 'Ningún canal configurado todavía';
+  }
 }
 
 $('#saveSettings').addEventListener('click', async () => {
@@ -802,6 +810,40 @@ $('#savePassword').addEventListener('click', async () => {
     err.classList.add('on');
   }
 });
+
+$('#saveNotify').addEventListener('click', async () => {
+  const notify = {
+    emailEnabled: $('#notifyEmailOn').checked,
+    whatsappEnabled: $('#notifyWaOn').checked,
+    emailTo: $('#notifyEmailTo').value.trim(),
+    emailFrom: $('#notifyEmailFrom').value.trim(),
+    waPhone: $('#notifyWaPhone').value.trim(),
+  };
+  const rk = $('#notifyResendKey').value.trim();
+  const wk = $('#notifyWaKey').value.trim();
+  if (rk) notify.resendKey = rk;
+  if (wk) notify.waKey = wk;
+  try {
+    await api('/api/admin/settings', { method: 'PUT', body: JSON.stringify({ notify }) });
+    toast('Avisos guardados ✦');
+    await loadAll();
+  } catch (ex) { toast(ex.message); }
+});
+
+async function testNotify(channel, btn) {
+  const old = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Enviando…';
+  try {
+    await api('/api/admin/notify/test', { method: 'POST', body: JSON.stringify({ channel }) });
+    toast(channel === 'email' ? 'Email de prueba enviado ✦' : 'WhatsApp de prueba enviado ✦');
+  } catch (ex) {
+    toast('No se pudo enviar: ' + ex.message);
+  } finally {
+    btn.disabled = false; btn.textContent = old;
+  }
+}
+$('#testEmail').addEventListener('click', (e) => testNotify('email', e.currentTarget));
+$('#testWa').addEventListener('click', (e) => testNotify('whatsapp', e.currentTarget));
 
 /* ---------- boot ---------- */
 (async () => {

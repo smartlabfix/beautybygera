@@ -63,6 +63,15 @@ function seedStore() {
       googleReviewUrl: '',
       reviewsEnabled: true,
       reviewsAutoApprove: false,
+      notify: {
+        emailEnabled: true,
+        whatsappEnabled: true,
+        emailTo: '',
+        emailFrom: '',
+        resendKey: '',
+        waPhone: '',
+        waKey: '',
+      },
     },
     services: SERVICES_SEED,
     weekly,
@@ -115,7 +124,12 @@ async function loadStore() {
   if (existsSync(DB_FILE)) {
     const raw = await readFile(DB_FILE, 'utf8');
     store = JSON.parse(raw);
-    store.settings = { ...seedStore().settings, ...store.settings };
+    const baseSettings = seedStore().settings;
+    store.settings = {
+      ...baseSettings,
+      ...store.settings,
+      notify: { ...baseSettings.notify, ...(store.settings.notify || {}) },
+    };
     store.services = Array.isArray(store.services) && store.services.length ? store.services : SERVICES_SEED;
     store.weekly = store.weekly || {};
     store.overrides = store.overrides || {};
@@ -237,8 +251,22 @@ function bookingMessage(b, adminUrl) {
   return lines.join('\n');
 }
 
+function getNotifyConfig() {
+  const n = store.settings.notify || {};
+  return {
+    emailKey: n.resendKey || NOTIFY.resendKey,
+    emailTo: n.emailTo || NOTIFY.emailTo,
+    emailFrom: n.emailFrom || NOTIFY.emailFrom,
+    waPhone: n.waPhone || NOTIFY.waPhone,
+    waKey: n.waKey || NOTIFY.waKey,
+    emailOn: n.emailEnabled !== false,
+    waOn: n.whatsappEnabled !== false,
+  };
+}
+
 async function notifyEmail(b, adminUrl) {
-  if (!NOTIFY.resendKey || !NOTIFY.emailTo) return;
+  const c = getNotifyConfig();
+  if (!c.emailOn || !c.emailKey || !c.emailTo) return { ok: false, error: 'sin configurar' };
   try {
     const text = bookingMessage(b, adminUrl);
     const html = `<div style="font-family:system-ui,sans-serif;line-height:1.6;color:#241318">
@@ -252,33 +280,38 @@ async function notifyEmail(b, adminUrl) {
     </div>`;
     const r = await fetch(NOTIFY.resendBase + '/emails', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${NOTIFY.resendKey}`, 'Content-Type': 'application/json' },
+      headers: { Authorization: `Bearer ${c.emailKey}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: NOTIFY.emailFrom,
-        to: [NOTIFY.emailTo],
+        from: c.emailFrom,
+        to: [c.emailTo],
         subject: `Nueva cita · ${b.name} · ${bookingDateLabel(b.date)} ${b.time}`,
         text,
         html,
       }),
       signal: AbortSignal.timeout(4000),
     });
-    if (!r.ok) console.warn('[notify] email respondió', r.status);
+    if (!r.ok) { console.warn('[notify] email respondió', r.status); return { ok: false, error: 'HTTP ' + r.status }; }
+    return { ok: true };
   } catch (err) {
     console.warn('[notify] email falló:', err.message, err.cause?.message || '');
+    return { ok: false, error: err.message };
   }
 }
 
 async function notifyWhatsApp(b, adminUrl) {
-  if (!NOTIFY.waPhone || !NOTIFY.waKey) return;
+  const c = getNotifyConfig();
+  if (!c.waOn || !c.waPhone || !c.waKey) return { ok: false, error: 'sin configurar' };
   try {
     const url = new URL(NOTIFY.callmeBase + '/whatsapp.php');
-    url.searchParams.set('phone', NOTIFY.waPhone);
+    url.searchParams.set('phone', c.waPhone);
     url.searchParams.set('text', bookingMessage(b, adminUrl));
-    url.searchParams.set('apikey', NOTIFY.waKey);
+    url.searchParams.set('apikey', c.waKey);
     const r = await fetch(url, { signal: AbortSignal.timeout(4000) });
-    if (!r.ok) console.warn('[notify] whatsapp respondió', r.status);
+    if (!r.ok) { console.warn('[notify] whatsapp respondió', r.status); return { ok: false, error: 'HTTP ' + r.status }; }
+    return { ok: true };
   } catch (err) {
     console.warn('[notify] whatsapp falló:', err.message, err.cause?.message || '');
+    return { ok: false, error: err.message };
   }
 }
 
@@ -362,12 +395,17 @@ function blockedInPreview(req) {
   return Boolean(req.headers['cf-connecting-ip'] || req.headers['cf-ray'] || req.headers['x-forwarded-for']);
 }
 
+function publicSettings() {
+  const { notify, ...rest } = store.settings;
+  return rest;
+}
+
 function publicSite() {
   const approved = store.reviews.filter((r) => r.status === 'approved');
   const count = approved.length;
   const avg = count ? Math.round((approved.reduce((s, r) => s + Number(r.rating || 0), 0) / count) * 10) / 10 : 0;
   return {
-    settings: store.settings,
+    settings: publicSettings(),
     services: store.services.map((s) => ({ ...s, image: s.image || '' })),
     gallery: store.gallery,
     reviews: approved.slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))).slice(0, 24),
@@ -493,15 +531,25 @@ async function handleApi(req, res, url) {
   if (p === '/api/admin/data' && req.method === 'GET') {
     if (!requireAuth(req, res)) return;
     return json(res, 200, {
-      settings: store.settings, services: store.services.map((s) => ({ ...s, image: s.image || '' })), weekly: store.weekly,
+      settings: publicSettings(), services: store.services.map((s) => ({ ...s, image: s.image || '' })), weekly: store.weekly,
       overrides: store.overrides, blockedDates: store.blockedDates,
       bookings: store.bookings.slice().sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)),
       gallery: store.gallery,
       reviews: store.reviews.slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))),
-      notify: {
-        email: Boolean(NOTIFY.resendKey && NOTIFY.emailTo),
-        whatsapp: Boolean(NOTIFY.waPhone && NOTIFY.waKey),
-      },
+      notify: (() => {
+        const c = getNotifyConfig();
+        return {
+          email: Boolean(c.emailOn && c.emailKey && c.emailTo),
+          whatsapp: Boolean(c.waOn && c.waPhone && c.waKey),
+          emailEnabled: c.emailOn,
+          whatsappEnabled: c.waOn,
+          emailTo: c.emailTo,
+          emailFrom: c.emailFrom,
+          waPhone: c.waPhone,
+          hasResendKey: Boolean(c.emailKey),
+          hasWaKey: Boolean(c.waKey),
+        };
+      })(),
     });
   }
 
@@ -518,13 +566,40 @@ async function handleApi(req, res, url) {
     if (Number.isFinite(Number(body.mapZoom))) store.settings.mapZoom = Math.min(19, Math.max(3, Math.round(Number(body.mapZoom))));
     if (typeof body.reviewsEnabled === 'boolean') store.settings.reviewsEnabled = body.reviewsEnabled;
     if (typeof body.reviewsAutoApprove === 'boolean') store.settings.reviewsAutoApprove = body.reviewsAutoApprove;
+    if (body.notify && typeof body.notify === 'object') {
+      const n = store.settings.notify;
+      for (const k of ['emailTo', 'emailFrom', 'waPhone']) {
+        if (typeof body.notify[k] === 'string') n[k] = body.notify[k].trim().slice(0, 300);
+      }
+      for (const k of ['resendKey', 'waKey']) {
+        if (body.notify[k] === null) n[k] = '';
+        else if (typeof body.notify[k] === 'string' && body.notify[k].trim()) n[k] = body.notify[k].trim().slice(0, 500);
+      }
+      if (typeof body.notify.emailEnabled === 'boolean') n.emailEnabled = body.notify.emailEnabled;
+      if (typeof body.notify.whatsappEnabled === 'boolean') n.whatsappEnabled = body.notify.whatsappEnabled;
+    }
     let geocoded = null;
     if (body.geocode === true) {
       geocoded = await geocodeAddress(store.settings.address);
       if (geocoded) { store.settings.mapLat = geocoded.lat; store.settings.mapLng = geocoded.lon; }
     }
     await persist();
-    return json(res, 200, { ok: true, settings: store.settings, geocoded });
+    return json(res, 200, { ok: true, settings: publicSettings(), geocoded });
+  }
+
+  if (p === '/api/admin/notify/test' && req.method === 'POST') {
+    if (!requireAuth(req, res)) return;
+    let body;
+    try { body = JSON.parse(await readBody(req, 16 * 1024)); } catch { return json(res, 400, { error: 'Datos no válidos' }); }
+    const channel = body.channel === 'whatsapp' ? 'whatsapp' : 'email';
+    const sample = {
+      serviceName: 'Efecto Clásico', price: 55, date: madridNow().date, time: '10:00',
+      name: 'Prueba de aviso', phone: store.settings.phone || '600000000', email: '', notes: 'Aviso de prueba desde el panel.',
+    };
+    const adminUrl = (NOTIFY.publicUrl || ('http://localhost:' + PORT)) + '/admin';
+    const result = channel === 'whatsapp' ? await notifyWhatsApp(sample, adminUrl) : await notifyEmail(sample, adminUrl);
+    if (!result.ok) return json(res, 400, { ok: false, error: result.error || 'No se pudo enviar' });
+    return json(res, 200, { ok: true });
   }
 
   if (p === '/api/admin/services' && req.method === 'PUT') {

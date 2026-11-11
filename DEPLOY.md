@@ -93,6 +93,11 @@ El servidor crea `data/store.json` al arrancar. Si existe `data/seed.json`, lo u
 
 Cada reserva puede avisarte por **email**, por **WhatsApp** o por ambos. Los avisos se envían después de guardar la cita; si el proveedor falla, la reserva no se pierde.
 
+Puedes configurarlo de dos formas:
+
+- **Desde el panel** → *Ajustes → Avisos de nuevas citas*: activas el canal, pegas las claves y usas los botones **Probar**. Es lo más cómodo.
+- **Desde Render → Environment**: las variables mandan y sobreviven a reinicios. En el plan gratis, lo que guardes solo en el panel se pierde cuando el servicio se reinicia o redespliega, así que usa el panel para probar y las variables para dejarlo fijo.
+
 ### Email con Resend (recomendado)
 1. Crea una cuenta gratis en <https://resend.com> (100 emails/día).
 2. En **API Keys**, crea una clave y cópiala.

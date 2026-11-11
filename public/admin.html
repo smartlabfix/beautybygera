@@ -266,14 +266,29 @@
         <div class="block-head">
           <div>
             <h3>Avisos de nuevas citas</h3>
-            <p class="hint">Se configuran en el hosting (Render → Environment). Aquí solo ves si están activos.</p>
+            <p class="hint">Activa los canales y guarda. En el plan gratis, si el servicio reinicia, vuelven a las variables de Render.</p>
           </div>
         </div>
-        <div class="mini-list">
-          <div class="mini-row"><span>Email</span><b id="notifyEmail">—</b></div>
-          <div class="mini-row"><span>WhatsApp</span><b id="notifyWhatsapp">—</b></div>
+        <div class="notify-cols">
+          <div class="notify-box">
+            <label class="switch"><input type="checkbox" id="notifyEmailOn"> <span>Avisarme por email</span></label>
+            <div class="field"><label>Email de destino</label><input id="notifyEmailTo" placeholder="tu@email.com"></div>
+            <div class="field"><label>Remitente</label><input id="notifyEmailFrom" placeholder="Beauty By Gera <onboarding@resend.dev>"></div>
+            <div class="field"><label>API key de Resend</label><input id="notifyResendKey" type="password" placeholder="•••••• (guardada)" autocomplete="new-password"></div>
+            <div class="special-row"><button class="btn btn-soft btn-sm" id="testEmail" type="button">Probar email</button></div>
+          </div>
+          <div class="notify-box">
+            <label class="switch"><input type="checkbox" id="notifyWaOn"> <span>Avisarme por WhatsApp</span></label>
+            <div class="field"><label>Tu WhatsApp</label><input id="notifyWaPhone" placeholder="+34600111222"></div>
+            <div class="field"><label>API key de CallMeBot</label><input id="notifyWaKey" type="password" placeholder="•••••• (guardada)" autocomplete="new-password"></div>
+            <p class="hint">Envía <code>I allow callmebot to send me messages</code> al +34 644 66 32 62 para obtener tu clave.</p>
+            <div class="special-row"><button class="btn btn-soft btn-sm" id="testWa" type="button">Probar WhatsApp</button></div>
+          </div>
         </div>
-        <p class="hint" style="margin-top:.7rem">Email: <code>RESEND_API_KEY</code> + <code>NOTIFY_EMAIL</code>. WhatsApp: <code>CALLMEBOT_PHONE</code> + <code>CALLMEBOT_APIKEY</code>.</p>
+        <div class="special-row" style="margin-top:.8rem">
+          <button class="btn btn-primary btn-sm" id="saveNotify" type="button">Guardar avisos</button>
+          <span class="hint" id="notifyStatus"></span>
+        </div>
       </div>
 
       <div class="panel-block">
