@@ -263,6 +263,20 @@
       </div>
 
       <div class="panel-block">
+        <div class="block-head">
+          <div>
+            <h3>Avisos de nuevas citas</h3>
+            <p class="hint">Se configuran en el hosting (Render → Environment). Aquí solo ves si están activos.</p>
+          </div>
+        </div>
+        <div class="mini-list">
+          <div class="mini-row"><span>Email</span><b id="notifyEmail">—</b></div>
+          <div class="mini-row"><span>WhatsApp</span><b id="notifyWhatsapp">—</b></div>
+        </div>
+        <p class="hint" style="margin-top:.7rem">Email: <code>RESEND_API_KEY</code> + <code>NOTIFY_EMAIL</code>. WhatsApp: <code>CALLMEBOT_PHONE</code> + <code>CALLMEBOT_APIKEY</code>.</p>
+      </div>
+
+      <div class="panel-block">
         <div class="block-head"><div><h3>Seguridad</h3><p class="hint">Cambia la contraseña del panel. Se cerrarán todas las sesiones.</p></div></div>
         <div class="form-grid">
           <div class="field"><label>Contraseña actual</label><input type="password" id="pwCurrent" autocomplete="current-password"></div>

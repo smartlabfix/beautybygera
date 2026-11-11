@@ -82,6 +82,41 @@ El servidor crea `data/store.json` al arrancar. Si existe `data/seed.json`, lo u
 | `ADMIN_PASSWORD` | Contraseña inicial del panel cuando se crea la base. |
 | `DATA_DIR` | Carpeta de `store.json` (por defecto `./data`). |
 | `UPLOADS_DIR` | Carpeta de fotos (por defecto `./public/uploads`). |
+| `PUBLIC_URL` | URL pública para los enlaces de los avisos (ej. `https://beautybygera.onrender.com`). |
+| `RESEND_API_KEY` | Clave de Resend para avisar por email. |
+| `NOTIFY_EMAIL` | Email donde quieres recibir las citas. |
+| `NOTIFY_FROM` | Remitente verificado (por defecto `onboarding@resend.dev`). |
+| `CALLMEBOT_PHONE` | Tu WhatsApp con prefijo (ej. `+34600111222`). |
+| `CALLMEBOT_APIKEY` | Clave que te da CallMeBot. |
+
+## Avisos de nuevas citas
+
+Cada reserva puede avisarte por **email**, por **WhatsApp** o por ambos. Los avisos se envían después de guardar la cita; si el proveedor falla, la reserva no se pierde.
+
+### Email con Resend (recomendado)
+1. Crea una cuenta gratis en <https://resend.com> (100 emails/día).
+2. En **API Keys**, crea una clave y cópiala.
+3. En Render → **Environment** añade:
+   - `RESEND_API_KEY` = la clave
+   - `NOTIFY_EMAIL` = tu email
+   - `NOTIFY_FROM` = `Beauty By Gera <onboarding@resend.dev>` (para pruebas)
+4. Guarda y redespliega.
+
+Con `onboarding@resend.dev` solo puedes enviarte emails a la dirección con la que creaste Resend. Para enviar a otra, verifica tu dominio en Resend y usa un remitente como `citas@beautybygera.com`.
+
+### WhatsApp con CallMeBot
+1. Guarda el número **+34 644 66 32 62** en tus contactos.
+2. Envíale por WhatsApp el mensaje: `I allow callmebot to send me messages`
+3. Te responderá con una **API key**.
+4. En Render → **Environment** añade:
+   - `CALLMEBOT_PHONE` = tu número con prefijo (`+34...`)
+   - `CALLMEBOT_APIKEY` = la clave que te dio
+5. Guarda y redespliega.
+
+CallMeBot es un servicio gratuito no oficial: puede tardar o limitar envíos. Para algo crítico, usa email o una API oficial.
+
+### Comprobar
+En el panel → **Ajustes → Avisos de nuevas citas** verás si cada canal está **Activado**. Haz una reserva de prueba y revisa el email/WhatsApp; luego bórrala en Agenda.
 
 ## Antes de enseñarla
 

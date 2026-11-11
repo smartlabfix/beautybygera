@@ -12,6 +12,16 @@ const UPLOADS = process.env.UPLOADS_DIR ? path.resolve(process.env.UPLOADS_DIR) 
 const DB_FILE = path.join(DATA_DIR, 'store.json');
 const PORT = Number(process.env.PORT || 4180);
 const PREVIEW_MODE = process.env.PREVIEW_MODE === '1';
+const NOTIFY = {
+  resendKey: process.env.RESEND_API_KEY || '',
+  emailTo: process.env.NOTIFY_EMAIL || '',
+  emailFrom: process.env.NOTIFY_FROM || 'Beauty By Gera <onboarding@resend.dev>',
+  waPhone: process.env.CALLMEBOT_PHONE || '',
+  waKey: process.env.CALLMEBOT_APIKEY || '',
+  resendBase: process.env.RESEND_BASE || 'https://api.resend.com',
+  callmeBase: process.env.CALLMEBOT_BASE || 'https://api.callmebot.com',
+  publicUrl: process.env.PUBLIC_URL || '',
+};
 
 const DEFAULT_PASSWORD = 'Gera2026!';
 const INITIAL_PASSWORD = process.env.ADMIN_PASSWORD || DEFAULT_PASSWORD;
@@ -202,6 +212,89 @@ async function geocodeAddress(address) {
   } catch { return null; }
 }
 
+/* ---------- avisos de nueva cita ---------- */
+function escHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+function bookingDateLabel(dateStr) {
+  const [y, m, d] = String(dateStr).split('-');
+  return `${d}/${m}/${y}`;
+}
+function bookingMessage(b, adminUrl) {
+  const lines = [
+    '✦ Nueva cita en Beauty By Gera',
+    '',
+    `Efecto: ${b.serviceName}`,
+    `Fecha: ${bookingDateLabel(b.date)}`,
+    `Hora: ${b.time} h`,
+    `Precio: ${b.price}€`,
+    `Clienta: ${b.name}`,
+    `Teléfono: ${b.phone}`,
+  ];
+  if (b.email) lines.push(`Email: ${b.email}`);
+  if (b.notes) lines.push(`Notas: ${b.notes}`);
+  if (adminUrl) lines.push('', `Panel: ${adminUrl}`);
+  return lines.join('\n');
+}
+
+async function notifyEmail(b, adminUrl) {
+  if (!NOTIFY.resendKey || !NOTIFY.emailTo) return;
+  try {
+    const text = bookingMessage(b, adminUrl);
+    const html = `<div style="font-family:system-ui,sans-serif;line-height:1.6;color:#241318">
+      <h2 style="font-family:Georgia,serif;color:#7d2f45;margin:0 0 12px">Nueva cita</h2>
+      <p style="margin:0 0 12px"><b>${escHtml(b.serviceName)}</b> · ${escHtml(bookingDateLabel(b.date))} · ${escHtml(b.time)} h · ${escHtml(String(b.price))}€</p>
+      <p style="margin:0 0 6px"><b>Clienta:</b> ${escHtml(b.name)}</p>
+      <p style="margin:0 0 6px"><b>Teléfono:</b> ${escHtml(b.phone)}</p>
+      ${b.email ? `<p style="margin:0 0 6px"><b>Email:</b> ${escHtml(b.email)}</p>` : ''}
+      ${b.notes ? `<p style="margin:0 0 6px"><b>Notas:</b> ${escHtml(b.notes)}</p>` : ''}
+      ${adminUrl ? `<p style="margin-top:16px"><a href="${escHtml(adminUrl)}" style="color:#d8748e">Abrir el panel</a></p>` : ''}
+    </div>`;
+    const r = await fetch(NOTIFY.resendBase + '/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${NOTIFY.resendKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: NOTIFY.emailFrom,
+        to: [NOTIFY.emailTo],
+        subject: `Nueva cita · ${b.name} · ${bookingDateLabel(b.date)} ${b.time}`,
+        text,
+        html,
+      }),
+      signal: AbortSignal.timeout(4000),
+    });
+    if (!r.ok) console.warn('[notify] email respondió', r.status);
+  } catch (err) {
+    console.warn('[notify] email falló:', err.message, err.cause?.message || '');
+  }
+}
+
+async function notifyWhatsApp(b, adminUrl) {
+  if (!NOTIFY.waPhone || !NOTIFY.waKey) return;
+  try {
+    const url = new URL(NOTIFY.callmeBase + '/whatsapp.php');
+    url.searchParams.set('phone', NOTIFY.waPhone);
+    url.searchParams.set('text', bookingMessage(b, adminUrl));
+    url.searchParams.set('apikey', NOTIFY.waKey);
+    const r = await fetch(url, { signal: AbortSignal.timeout(4000) });
+    if (!r.ok) console.warn('[notify] whatsapp respondió', r.status);
+  } catch (err) {
+    console.warn('[notify] whatsapp falló:', err.message, err.cause?.message || '');
+  }
+}
+
+async function notifyBooking(b, req) {
+  let adminUrl = '';
+  try {
+    if (NOTIFY.publicUrl) adminUrl = NOTIFY.publicUrl.replace(/\/$/, '') + '/admin';
+    else {
+      const proto = String(req.headers['x-forwarded-proto'] || 'http').split(',')[0].trim();
+      const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
+      if (host) adminUrl = `${proto}://${host}/admin`;
+    }
+  } catch {}
+  await Promise.allSettled([notifyEmail(b, adminUrl), notifyWhatsApp(b, adminUrl)]);
+}
+
 /* ---------- http ---------- */
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8',
@@ -332,6 +425,7 @@ async function handleApi(req, res, url) {
     };
     store.bookings.push(booking);
     await persist();
+    await notifyBooking(booking, req);
     return json(res, 201, { ok: true, booking, whatsapp: store.settings.whatsapp });
   }
 
@@ -404,6 +498,10 @@ async function handleApi(req, res, url) {
       bookings: store.bookings.slice().sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time)),
       gallery: store.gallery,
       reviews: store.reviews.slice().sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt))),
+      notify: {
+        email: Boolean(NOTIFY.resendKey && NOTIFY.emailTo),
+        whatsapp: Boolean(NOTIFY.waPhone && NOTIFY.waKey),
+      },
     });
   }
 
@@ -705,3 +803,4 @@ server.listen({ port: PORT, host: '::', ipv6Only: false }, () => {
   console.log('');
   if (PREVIEW_MODE) console.log('  Modo demo público: el panel solo acepta acceso local.\n');
 });
+

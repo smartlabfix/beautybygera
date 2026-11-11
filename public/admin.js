@@ -630,6 +630,11 @@ function fillSettings() {
   $('#logoPreview').innerHTML = s.logo
     ? `<img src="${esc(s.logo)}" alt="Logo actual">`
     : '<span class="hint">Sin logo: se usa la marca tipográfica “Beauty By Gera”.</span>';
+  const n = state.data.notify || {};
+  const eEl = $('#notifyEmail');
+  const wEl = $('#notifyWhatsapp');
+  if (eEl) { eEl.textContent = n.email ? 'Activado' : 'Sin configurar'; eEl.className = n.email ? 'ok' : 'off'; }
+  if (wEl) { wEl.textContent = n.whatsapp ? 'Activado' : 'Sin configurar'; wEl.className = n.whatsapp ? 'ok' : 'off'; }
 }
 
 $('#saveSettings').addEventListener('click', async () => {
