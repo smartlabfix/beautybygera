@@ -596,7 +596,10 @@ async function handleApi(req, res, url) {
       serviceName: 'Efecto Clásico', price: 55, date: madridNow().date, time: '10:00',
       name: 'Prueba de aviso', phone: store.settings.phone || '600000000', email: '', notes: 'Aviso de prueba desde el panel.',
     };
-    const adminUrl = (NOTIFY.publicUrl || ('http://localhost:' + PORT)) + '/admin';
+    const proto = String(req.headers['x-forwarded-proto'] || 'http').split(',')[0].trim();
+    const host = String(req.headers['x-forwarded-host'] || req.headers.host || '').split(',')[0].trim();
+    const origin = NOTIFY.publicUrl || (host ? `${proto}://${host}` : 'http://localhost:' + PORT);
+    const adminUrl = origin.replace(/\/$/, '') + '/admin';
     const result = channel === 'whatsapp' ? await notifyWhatsApp(sample, adminUrl) : await notifyEmail(sample, adminUrl);
     if (!result.ok) return json(res, 400, { ok: false, error: result.error || 'No se pudo enviar' });
     return json(res, 200, { ok: true });
