@@ -12,6 +12,10 @@
   --wine-deep:#5c1f31;
   --gold:#c8a06a;
   --gold-soft:#f0e0c6;
+  --green:#2f8f63;
+  --green-deep:#236b4a;
+  --green-soft:#eaf7f0;
+  --gray:#b9b3b6;
   --white:#fff;
   --line:rgba(125,47,69,.14);
   --shadow-s:0 2px 10px rgba(92,31,49,.06);
@@ -227,10 +231,10 @@ section{padding:clamp(3.5rem, 7vw, 6.5rem) 0}
   font-size:.86rem; color:var(--ink-soft); border:1px solid transparent; transition:.22s; background:transparent;
 }
 .day.empty{pointer-events:none}
-.day.has:hover{background:var(--petal); border-color:rgba(125,47,69,.1); transform:translateY(-2px)}
-.day.has{color:var(--ink); font-weight:600; cursor:pointer}
-.day .dot{position:absolute; bottom:8px; width:4px; height:4px; border-radius:50%; background:var(--rose-deep)}
-.day.off{color:#c9b6bd; text-decoration:line-through; text-decoration-thickness:1px; cursor:default}
+.day.has:hover{background:var(--green-soft); border-color:rgba(47,143,99,.2); transform:translateY(-2px)}
+.day.has{color:var(--green-deep); font-weight:600; cursor:pointer}
+.day .dot{position:absolute; bottom:8px; width:4px; height:4px; border-radius:50%; background:var(--green)}
+.day.off{color:var(--gray); text-decoration:line-through; text-decoration-thickness:1px; cursor:default}
 .day.today::before{content:''; position:absolute; inset:5px; border:1px solid rgba(125,47,69,.22); border-radius:12px}
 .day.sel{background:linear-gradient(150deg, var(--wine), var(--rose-deep)); color:#fff; box-shadow:0 10px 24px -10px rgba(125,47,69,.8); border-color:transparent}
 .day.sel .dot{background:#fff}
