@@ -690,6 +690,11 @@ const server = http.createServer(async (req, res) => {
 });
 
 await loadStore();
+// En hosting, la variable ADMIN_PASSWORD manda: garantiza que siempre sea la vigente.
+if (process.env.ADMIN_PASSWORD) {
+  store.auth.password = hashPassword(process.env.ADMIN_PASSWORD);
+  await persist();
+}
 server.listen({ port: PORT, host: '::', ipv6Only: false }, () => {
   console.log(`\n  ✦ Beauty By Gera`);
   console.log(`  Web pública:  http://localhost:${PORT}/`);

@@ -46,7 +46,7 @@ async function api(path, opts = {}) {
     headers: opts.body ? { 'Content-Type': 'application/json', ...(opts.headers || {}) } : (opts.headers || {}),
     ...opts,
   });
-  if (res.status === 401) { showLogin(); throw new Error('Sesión caducada'); }
+  if (res.status === 401 && path !== '/api/admin/login') { showLogin(); throw new Error('Sesión caducada'); }
   let data = null;
   try { data = await res.json(); } catch {}
   if (!res.ok) throw new Error(data?.error || 'Error inesperado');

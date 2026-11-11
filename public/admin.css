@@ -25,6 +25,8 @@
 .login-card .field{text-align:left}
 .login-card .form-error{text-align:left}
 .login-back{display:inline-block; margin-top:1.4rem; font-size:.72rem; color:var(--muted)}
+.login-hint{font-size:.68rem; color:var(--muted); line-height:1.5; margin:1rem 0 0}
+.login-hint code{font-size:.66rem; background:#faf1f4; color:var(--wine); padding:.1rem .3rem; border-radius:5px}
 .login-back:hover{color:var(--wine)}
 
 /* shell */
