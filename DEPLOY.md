@@ -89,6 +89,9 @@ El servidor crea `data/store.json` al arrancar. Si existe `data/seed.json`, lo u
 | `CALLMEBOT_PHONE` | Tu WhatsApp con prefijo (ej. `+34600111222`). |
 | `CALLMEBOT_APIKEY` | Clave que te da CallMeBot. |
 | `CRON_SECRET` | Clave para el endpoint de recordatorios automáticos. |
+| `BREVO_API_KEY` | Clave de Brevo para enviar emails a clientas sin dominio propio. |
+| `BREVO_FROM` | Email verificado en Brevo que aparecerá como remitente. |
+| `BREVO_FROM_NAME` | Nombre del remitente (por defecto `Beauty By Gera`). |
 
 ## Avisos de nuevas citas
 
@@ -128,7 +131,9 @@ En el panel → **Ajustes → Avisos de nuevas citas** verás si cada canal est�
 
 En **Ajustes → Recordatorios a clientas** puedes activarlos y elegir **24 h** o **12 h** antes.
 
-- **Email automático**: se envía a la dirección que dejó la clienta. Necesita Resend con un **dominio verificado**; con `onboarding@resend.dev` solo puedes escribirte a ti, no a las clientas.
+- **Email automático**: se envía a la dirección que dejó la clienta. Hay dos proveedores:
+  - **Brevo** (recomendado si no tienes dominio): crea cuenta gratis, verifica tu email como remitente y define `BREVO_API_KEY` y `BREVO_FROM`. Permite escribir a cualquier clienta.
+  - **Resend**: necesita un **dominio verificado**; con `onboarding@resend.dev` solo puedes escribirte a ti, no a las clientas.
 - **WhatsApp**: CallMeBot no puede escribir a números que no hayan autorizado el bot, así que en Agenda tienes un botón **⏰** que abre WhatsApp con el recordatorio ya escrito para enviarlo con un toque. Para envío automático real hace falta la API oficial de Meta (cuenta Business, número verificado y plantilla aprobada).
 
 ### Que los recordatorios se ejecuten siempre

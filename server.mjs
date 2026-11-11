@@ -22,6 +22,12 @@ const NOTIFY = {
   callmeBase: process.env.CALLMEBOT_BASE || 'https://api.callmebot.com',
   publicUrl: process.env.PUBLIC_URL || '',
 };
+const BREVO = {
+  key: process.env.BREVO_API_KEY || '',
+  from: process.env.BREVO_FROM || '',
+  name: process.env.BREVO_FROM_NAME || 'Beauty By Gera',
+  base: process.env.BREVO_BASE || 'https://api.brevo.com',
+};
 
 const DEFAULT_PASSWORD = 'Gera2026!';
 const INITIAL_PASSWORD = process.env.ADMIN_PASSWORD || DEFAULT_PASSWORD;
@@ -266,9 +272,32 @@ function getNotifyConfig() {
   };
 }
 
+async function sendEmailBrevo({ to, subject, text, html }) {
+  try {
+    const r = await fetch(BREVO.base + '/v3/smtp/email', {
+      method: 'POST',
+      headers: { 'api-key': BREVO.key, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sender: { name: BREVO.name, email: BREVO.from },
+        to: [{ email: to }],
+        subject,
+        htmlContent: html,
+        textContent: text,
+      }),
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!r.ok) { console.warn('[email] brevo respondió', r.status); return { ok: false, error: 'HTTP ' + r.status }; }
+    return { ok: true };
+  } catch (err) {
+    console.warn('[email] brevo falló:', err.message, err.cause?.message || '');
+    return { ok: false, error: err.message };
+  }
+}
+
 async function notifyEmail(b, adminUrl) {
   const c = getNotifyConfig();
-  if (!c.emailOn || !c.emailKey || !c.emailTo) return { ok: false, error: 'sin configurar' };
+  if (!c.emailOn || !c.emailTo) return { ok: false, error: 'sin configurar' };
+  if (!c.emailKey && !(BREVO.key && BREVO.from)) return { ok: false, error: 'sin configurar' };
   try {
     const text = bookingMessage(b, adminUrl);
     const html = `<div style="font-family:system-ui,sans-serif;line-height:1.6;color:#241318">
@@ -280,6 +309,14 @@ async function notifyEmail(b, adminUrl) {
       ${b.notes ? `<p style="margin:0 0 6px"><b>Notas:</b> ${escHtml(b.notes)}</p>` : ''}
       ${adminUrl ? `<p style="margin-top:16px"><a href="${escHtml(adminUrl)}" style="color:#d8748e">Abrir el panel</a></p>` : ''}
     </div>`;
+    if (BREVO.key && BREVO.from) {
+      return sendEmailBrevo({
+        to: c.emailTo,
+        subject: `Nueva cita · ${b.name} · ${bookingDateLabel(b.date)} ${b.time}`,
+        text,
+        html,
+      });
+    }
     const r = await fetch(NOTIFY.resendBase + '/emails', {
       method: 'POST',
       headers: { Authorization: `Bearer ${c.emailKey}`, 'Content-Type': 'application/json' },
@@ -360,7 +397,7 @@ function reminderWhen(b) {
 async function sendClientReminder(b, hours) {
   const c = getNotifyConfig();
   if (!b.email) return { ok: false, error: 'la clienta no dejó email' };
-  if (!c.emailKey) return { ok: false, error: 'email sin configurar' };
+  if (!c.emailKey && !(BREVO.key && BREVO.from)) return { ok: false, error: 'email sin configurar' };
   const when = reminderWhen(b);
   const fecha = bookingDateLabel(b.date);
   const waDigits = String(store.settings.whatsapp || '').replace(/[^\d]/g, '');
@@ -388,6 +425,14 @@ async function sendClientReminder(b, hours) {
     <p>¡Nos vemos pronto! ✦</p>
   </div>`;
   try {
+    if (BREVO.key && BREVO.from) {
+      return sendEmailBrevo({
+        to: b.email,
+        subject: `Recordatorio: tu cita ${when} a las ${b.time} h · Beauty By Gera`,
+        text,
+        html,
+      });
+    }
     const authHeader = 'Bearer ' + c.emailKey;
     const r = await fetch(NOTIFY.resendBase + '/emails', {
       method: 'POST',
