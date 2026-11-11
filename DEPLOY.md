@@ -146,6 +146,16 @@ Render Free **duerme** el servicio tras 15 minutos sin visitas, y entonces el pr
 
 El endpoint responde 403 si la clave no coincide y `{sent:n}` si todo va bien.
 
+## Evitar que Render se duerma
+
+El plan Free duerme el servicio tras 15 minutos sin visitas. Para mantenerlo despierto sin pagar:
+
+1. El repositorio incluye `.github/workflows/keepalive.yml`, que hace una petición cada 5 minutos.
+2. En GitHub → pestaña **Actions** → workflow **keepalive** → **Enable workflow** y, si quieres, **Run workflow** una vez para probar.
+3. GitHub Actions es gratis en repositorios públicos. En privados consume minutos, pero con una ejecución de segundos cada 5 minutos entra en la cuota gratuita.
+
+Limitaciones: GitHub puede retrasar las tareas programadas y las desactiva tras 60 días sin actividad en el repo. Si necesitas algo garantizado, usa **cron-job.org** cada 5 minutos contra `/api/health` o pasa al plan **Starter** de Render (7 $/mes), que no duerme.
+
 ## Antes de enseñarla
 
 - Revisa en **Ajustes** el teléfono, WhatsApp e Instagram reales.
