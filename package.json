@@ -1,0 +1,13 @@
+{
+  "name": "beauty-by-gera",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Web de reservas y panel de administración de Beauty By Gera",
+  "scripts": {
+    "start": "node server.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

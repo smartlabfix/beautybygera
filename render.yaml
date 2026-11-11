@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: beauty-by-gera
+    runtime: docker
+    plan: free
+    region: frankfurt
+    healthCheckPath: /api/health
+    envVars:
+      - key: PREVIEW_MODE
+        value: "1"
+      - key: ADMIN_PASSWORD
+        sync: false

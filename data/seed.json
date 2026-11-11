@@ -1,0 +1,168 @@
+{
+  "settings": {
+    "heroTitle": "Tu mirada, en versión película.",
+    "heroSubtitle": "Pestañas hechas a medida en un estudio íntimo. Diseñamos el efecto que mejor habla de ti — y lo reservas en 30 segundos.",
+    "phone": "+34 600 000 000",
+    "whatsapp": "+34600000000",
+    "instagram": "@beautybygera",
+    "address": "Passatge Dr. Serra, 1, 46004 Valencia",
+    "notice": "Primera visita: diagnóstico gratuito de mirada. Cancelación sin coste hasta 24 h antes.",
+    "heroImage": "/uploads/g_1794389935398_c5e9ec.jpg",
+    "logo": "/uploads/logo_1794390386743.png",
+    "favicon": "/uploads/favicon_1794390386744.png",
+    "mapLat": 39.4656707,
+    "mapLng": -0.3756451,
+    "mapZoom": 16,
+    "googleReviewUrl": "",
+    "reviewsEnabled": true,
+    "reviewsAutoApprove": false
+  },
+  "services": [
+    {
+      "id": "clasico",
+      "name": "Efecto Clásico",
+      "price": 55,
+      "icon": "✦",
+      "tag": "Natural",
+      "dur": "1 h 45 min",
+      "desc": "Una extensión por pestaña natural. Mirada limpia, definida y siempre favorecedora.",
+      "image": "/uploads/svc_clasico_1794249784324.jpg"
+    },
+    {
+      "id": "volumen",
+      "name": "Volumen",
+      "price": 60,
+      "icon": "❋",
+      "tag": "Con cuerpo",
+      "dur": "2 h",
+      "desc": "Abanicos ligeros que multiplican la densidad sin perder naturalidad.",
+      "image": "/uploads/svc_volumen_1794389423504.jpg"
+    },
+    {
+      "id": "ruso",
+      "name": "Volumen Ruso",
+      "price": 60,
+      "icon": "✺",
+      "tag": "Máximo glam",
+      "dur": "2 h 30 min",
+      "desc": "Abanicos de 3 a 6 fibras hechos a mano. Densidad de alfombra roja.",
+      "image": "/uploads/svc_ruso_1794389431300.jpg"
+    },
+    {
+      "id": "2d",
+      "name": "2D",
+      "price": 60,
+      "icon": "❃",
+      "tag": "Equilibrado",
+      "dur": "2 h",
+      "desc": "Dos fibras por pestaña: el punto medio perfecto entre volumen y naturalidad.",
+      "image": "/uploads/svc_2d_1794389489196.jpg"
+    },
+    {
+      "id": "3d",
+      "name": "3D",
+      "price": 60,
+      "icon": "✿",
+      "tag": "Intenso",
+      "dur": "2 h 15 min",
+      "desc": "Tres fibras por pestaña para una mirada profunda y muy fotogénica.",
+      "image": "/uploads/svc_3d_1794389544706.jpg"
+    },
+    {
+      "id": "muneca",
+      "name": "Efecto Muñeca",
+      "price": 60,
+      "icon": "❀",
+      "tag": "Doll eyes",
+      "dur": "2 h",
+      "desc": "Centro más largo y puntas cortas: ojos grandes, redondos y dulces.",
+      "image": "/uploads/svc_muneca_1794389630844.jpg"
+    },
+    {
+      "id": "humedo",
+      "name": "Efecto Húmedo",
+      "price": 60,
+      "icon": "✧",
+      "tag": "Wet look",
+      "dur": "2 h",
+      "desc": "Puntas agrupadas y brillo sutil. Ese look de recién salida de la ducha.",
+      "image": "/uploads/svc_humedo_1794389636771.jpg"
+    },
+    {
+      "id": "gato",
+      "name": "Ojo de Gato",
+      "price": 60,
+      "icon": "❥",
+      "tag": "Alargado",
+      "dur": "2 h",
+      "desc": "Las fibras más largas en el rabillo. Mirada felina, elevada y magnética.",
+      "image": "/uploads/svc_gato_1794389686739.jpg"
+    }
+  ],
+  "weekly": {
+    "0": [],
+    "1": [],
+    "2": [
+      "10:00",
+      "11:00",
+      "12:00",
+      "16:00",
+      "17:00",
+      "18:00",
+      "19:00"
+    ],
+    "3": [
+      "10:00",
+      "11:00",
+      "12:00",
+      "16:00",
+      "17:00",
+      "18:00",
+      "19:00"
+    ],
+    "4": [
+      "10:00",
+      "11:00",
+      "12:00",
+      "16:00",
+      "17:00",
+      "18:00",
+      "19:00"
+    ],
+    "5": [
+      "10:00",
+      "11:00",
+      "12:00",
+      "16:00",
+      "17:00",
+      "18:00",
+      "19:00"
+    ],
+    "6": [
+      "10:00",
+      "11:00",
+      "12:00"
+    ]
+  },
+  "overrides": {},
+  "blockedDates": [],
+  "gallery": [
+    {
+      "id": "7d8bf6d22f1f",
+      "file": "/uploads/g_1794389935398_c5e9ec.jpg",
+      "caption": "",
+      "createdAt": "2026-11-11T09:38:55.399Z"
+    }
+  ],
+  "reviews": [
+    {
+      "id": "0a188346483fe6a1",
+      "name": "Camila Gomez",
+      "rating": 5,
+      "text": "Si estas buscando pestañas espectaculares Gera es la indicada, super recomendada",
+      "serviceId": "volumen",
+      "status": "approved",
+      "createdAt": "2026-11-11T09:47:49.879Z"
+    }
+  ]
+}

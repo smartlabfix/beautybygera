@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Panel · Beauty By Gera</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%237d2f45'/%3E%3Ctext x='32' y='45' font-size='34' text-anchor='middle' fill='%23ffe9ee' font-family='Georgia'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/admin.css">
+</head>
+<body class="admin-body">
+
+<!-- LOGIN -->
+<div class="login-screen" id="loginScreen">
+  <div class="login-card">
+    <img id="loginLogo" class="login-logo" alt="Beauty By Gera" hidden>
+    <div class="login-mark">B</div>
+    <h1>Beauty By Gera</h1>
+    <p class="login-sub">Panel privado del estudio</p>
+    <form id="loginForm">
+      <div class="field">
+        <label for="password">Contraseña</label>
+        <input id="password" type="password" autocomplete="current-password" placeholder="••••••••••" required>
+      </div>
+      <div class="form-error" id="loginError"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:1rem" id="loginBtn">Entrar</button>
+    </form>
+    <a href="/" class="login-back">← Volver a la web</a>
+  </div>
+</div>
+
+<!-- APP -->
+<div class="admin-app" id="adminApp" hidden>
+  <aside class="sidebar">
+    <div class="side-brand">
+      <img id="sideLogo" class="side-logo" alt="Beauty By Gera" hidden>
+      <span class="brand-mark">B</span>
+      <span class="brand-name" style="font-size:1.15rem">Beauty By Gera<small>panel</small></span>
+    </div>
+    <nav class="side-nav">
+      <button class="side-link active" data-tab="agenda"><span>◷</span> Agenda</button>
+      <button class="side-link" data-tab="availability"><span>◐</span> Disponibilidad</button>
+      <button class="side-link" data-tab="gallery"><span>❋</span> Galería</button>
+      <button class="side-link" data-tab="reviews"><span>★</span> Reseñas</button>
+      <button class="side-link" data-tab="settings"><span>✦</span> Ajustes</button>
+    </nav>
+    <div class="side-foot">
+      <a href="/" target="_blank" class="side-link"><span>↗</span> Ver web pública</a>
+      <button class="side-link" id="logoutBtn"><span>⏻</span> Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main class="admin-main">
+    <div class="admin-top">
+      <div>
+        <h2 id="tabTitle">Agenda</h2>
+        <p class="muted" id="tabSub">Todas tus citas en un vistazo</p>
+      </div>
+      <div class="top-actions">
+        <span class="date-chip" id="todayChip"></span>
+        <a href="/" target="_blank" class="btn btn-ghost btn-sm">Ver web</a>
+      </div>
+    </div>
+
+    <!-- AGENDA -->
+    <section class="panel active" id="panel-agenda">
+      <div class="stats" id="stats"></div>
+      <div class="panel-block">
+        <div class="block-head">
+          <h3>Citas</h3>
+          <div class="segmented" id="agendaFilter">
+            <button data-filter="upcoming" class="active">Próximas</button>
+            <button data-filter="pending">Por confirmar</button>
+            <button data-filter="all">Todas</button>
+            <button data-filter="cancelled">Canceladas</button>
+          </div>
+        </div>
+        <div id="bookingsList" class="bookings-list"></div>
+      </div>
+    </section>
+
+    <!-- AVAILABILITY -->
+    <section class="panel" id="panel-availability">
+      <div class="panel-block">
+        <div class="block-head">
+          <div>
+            <h3>Horario semanal</h3>
+            <p class="hint">Estas son las horas que se ofrecen cada semana. Toca una hora para quitarla.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="saveWeekly">Guardar horario</button>
+        </div>
+        <div id="weeklyGrid" class="weekly-grid"></div>
+      </div>
+
+      <div class="panel-block">
+        <div class="block-head">
+          <div>
+            <h3>Días especiales</h3>
+            <p class="hint">Cambia las horas de una fecha concreta, o ciérrala por completo.</p>
+          </div>
+        </div>
+        <div class="special-row">
+          <input type="date" id="specialDate">
+          <button class="btn btn-soft btn-sm" id="loadSpecial">Editar ese día</button>
+          <button class="btn btn-ghost btn-sm" id="closeSpecial">Cerrar ese día</button>
+        </div>
+        <div id="specialEditor" class="special-editor" hidden>
+          <div class="special-head"><b id="specialTitle"></b><span class="pill" id="specialType">horario especial</span></div>
+          <div id="specialSlots" class="slot-chips"></div>
+          <div class="preset-row">
+            <span class="hint">Rellenar rápido:</span>
+            <button class="btn btn-soft btn-sm" type="button" data-preset="manana">Mañana</button>
+            <button class="btn btn-soft btn-sm" type="button" data-preset="tarde">Tarde</button>
+            <button class="btn btn-soft btn-sm" type="button" data-preset="completo">Día completo</button>
+          </div>
+          <div class="add-slot-row">
+            <input type="time" id="specialTime" step="900">
+            <button class="btn btn-soft btn-sm" id="addSpecialTime">Añadir hora</button>
+            <button class="btn btn-primary btn-sm" id="saveSpecial">Guardar día</button>
+            <button class="btn btn-ghost btn-sm" id="resetSpecial">Quitar excepción</button>
+          </div>
+        </div>
+        <div id="overridesList" class="mini-list"></div>
+      </div>
+
+      <div class="panel-block">
+        <div class="block-head">
+          <div>
+            <h3>Vacaciones / días cerrados</h3>
+            <p class="hint">Estos días no aparecerán disponibles en la web.</p>
+          </div>
+        </div>
+        <div class="special-row">
+          <input type="date" id="blockDate">
+          <button class="btn btn-soft btn-sm" id="addBlock">Bloquear día</button>
+        </div>
+        <div id="blockedList" class="chip-line"></div>
+      </div>
+    </section>
+
+    <!-- GALLERY -->
+    <section class="panel" id="panel-gallery">
+      <div class="panel-block">
+        <div class="block-head">
+          <div>
+            <h3>Fotos del estudio</h3>
+            <p class="hint">Se muestran en la galería de la web. Recomendado: fotos verticales u horizontales de al menos 1200 px.</p>
+          </div>
+          <label class="btn btn-primary btn-sm upload-btn">
+            Subir fotos <input type="file" id="galleryInput" accept="image/jpeg,image/png,image/webp" multiple hidden>
+          </label>
+        </div>
+        <div class="dropzone" id="dropzone">
+          <span class="dz-ico">❋</span>
+          <b>Arrastra aquí tus fotos</b>
+          <span class="muted">o pulsa “Subir fotos”. Se optimizan automáticamente.</span>
+        </div>
+        <div class="upload-status" id="uploadStatus"></div>
+        <div id="galleryAdmin" class="gallery-admin"></div>
+      </div>
+    </section>
+
+    <!-- REVIEWS -->
+    <section class="panel" id="panel-reviews">
+      <div class="stats" id="reviewStatsAdmin"></div>
+      <div class="panel-block">
+        <div class="block-head">
+          <div>
+            <h3>Reseñas de clientas</h3>
+            <p class="hint">En la web solo se ven las aprobadas. Puedes responder y tu respuesta aparece bajo la reseña.</p>
+          </div>
+          <div class="segmented" id="reviewFilter">
+            <button data-rfilter="pending" class="active">Por aprobar</button>
+            <button data-rfilter="approved">Publicadas</button>
+            <button data-rfilter="all">Todas</button>
+          </div>
+        </div>
+        <div id="reviewsAdmin" class="bookings-list"></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section class="panel" id="panel-settings">
+      <div class="panel-block">
+        <div class="block-head"><h3>Textos e identidad</h3></div>
+        <div class="form-grid">
+          <div class="field full"><label>Titular de la portada</label><input id="setHeroTitle"></div>
+          <div class="field full"><label>Subtítulo de la portada</label><textarea id="setHeroSubtitle"></textarea></div>
+          <div class="field"><label>Teléfono visible</label><input id="setPhone"></div>
+          <div class="field"><label>WhatsApp (con prefijo)</label><input id="setWhatsapp" placeholder="+34600000000"></div>
+          <div class="field"><label>Instagram</label><input id="setInstagram" placeholder="@beautybygera"></div>
+          <div class="field full"><label>Aviso bajo el resumen de reserva</label><textarea id="setNotice"></textarea></div>
+        </div>
+        <button class="btn btn-primary btn-sm" id="saveSettings" style="margin-top:1.1rem">Guardar cambios</button>
+      </div>
+
+      <div class="panel-block">
+        <div class="block-head">
+          <div><h3>Precios y fotos de los efectos</h3><p class="hint">Cambia precio y duración, o pon una foto propia a cada efecto. Se actualiza en la web al instante.</p></div>
+          <button class="btn btn-primary btn-sm" id="saveServices">Guardar precios</button>
+        </div>
+        <div id="servicesAdmin" class="services-admin"></div>
+      </div>
+
+      <div class="panel-block">
+        <div class="block-head">
+          <div><h3>Foto principal de la portada</h3><p class="hint">Sustituye la ilustración del hero por una foto tuya.</p></div>
+        </div>
+        <div class="special-row">
+          <label class="btn btn-soft btn-sm upload-btn">Subir foto principal <input type="file" id="heroInput" accept="image/jpeg,image/png,image/webp" hidden></label>
+          <button class="btn btn-ghost btn-sm" id="clearHero">Quitar foto</button>
+        </div>
+        <div id="heroPreview" class="hero-preview"></div>
+      </div>
+
+      <div class="panel-block">
+        <div class="block-head">
+          <div><h3>Logo del estudio</h3><p class="hint">Se usa en la cabecera de la web y en el panel. Mejor PNG con fondo transparente.</p></div>
+          <div class="special-row">
+            <label class="btn btn-soft btn-sm upload-btn">Subir logo <input type="file" id="logoInput" accept="image/png,image/jpeg,image/webp" hidden></label>
+            <button class="btn btn-ghost btn-sm" id="clearLogo">Quitar logo</button>
+          </div>
+        </div>
+        <div id="logoPreview" class="hero-preview"></div>
+      </div>
+
+      <div class="panel-block">
+        <div class="block-head">
+          <div>
+            <h3>Ubicación y mapa</h3>
+            <p class="hint">Escribe la dirección completa del estudio y pulsa “Buscar dirección”. El mapa de la web se coloca solo.</p>
+          </div>
+          <button class="btn btn-primary btn-sm" id="geocodeBtn">Buscar dirección</button>
+        </div>
+        <div class="form-grid">
+          <div class="field full"><label>Dirección del estudio</label><input id="setAddress" placeholder="Calle, número, código postal, ciudad"></div>
+          <div class="field"><label>Latitud</label><input id="setLat" inputmode="decimal" placeholder="40.4168"></div>
+          <div class="field"><label>Longitud</label><input id="setLng" inputmode="decimal" placeholder="-3.7038"></div>
+        </div>
+        <div id="geoResult" class="hint" style="margin-top:.6rem"></div>
+        <div id="mapPreview" class="hero-preview"></div>
+      </div>
+
+      <div class="panel-block">
+        <div class="block-head">
+          <div>
+            <h3>Reseñas</h3>
+            <p class="hint">Activa las reseñas en la web y decide si se publican solas o las revisas antes.</p>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field full"><label>Enlace a tus reseñas de Google (opcional)</label><input id="setGoogleReviewUrl" placeholder="https://g.page/r/…/review"></div>
+        </div>
+        <div class="switch-row">
+          <label class="switch"><input type="checkbox" id="setReviewsEnabled"> <span>Mostrar reseñas en la web</span></label>
+          <label class="switch"><input type="checkbox" id="setReviewsAuto"> <span>Publicar automáticamente (sin revisar)</span></label>
+        </div>
+      </div>
+
+      <div class="panel-block">
+        <div class="block-head"><div><h3>Seguridad</h3><p class="hint">Cambia la contraseña del panel. Se cerrarán todas las sesiones.</p></div></div>
+        <div class="form-grid">
+          <div class="field"><label>Contraseña actual</label><input type="password" id="pwCurrent" autocomplete="current-password"></div>
+          <div class="field"><label>Nueva contraseña (mín. 8)</label><input type="password" id="pwNext" autocomplete="new-password"></div>
+        </div>
+        <div class="form-error" id="pwError"></div>
+        <button class="btn btn-primary btn-sm" id="savePassword" style="margin-top:1rem">Cambiar contraseña</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="toast" id="toast"></div>
+<script src="/admin.js" type="module"></script>
+</body>
+</html>
+

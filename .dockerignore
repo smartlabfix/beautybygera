@@ -1,0 +1,8 @@
+node_modules
+data/store.json
+shots
+.tools
+*.log
+.env
+ACCESO-PANEL.txt
+ENLACE-PUBLICO.txt

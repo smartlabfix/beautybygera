@@ -1,0 +1,11 @@
+# dependencias y datos locales
+node_modules/
+data/store.json
+data/store.backup.json
+shots/
+.tools/
+.env
+*.log
+ACCESO-PANEL.txt
+ENLACE-PUBLICO.txt
+ACCESO-PANEL.txt
